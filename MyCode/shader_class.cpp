@@ -1,4 +1,4 @@
-#if 1
+#if 0
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -22,10 +22,6 @@ public:
 	void setInt(const std::string& name, int value)
 	{
 		glUniform1i(glGetUniformLocation(programID, name.c_str()), value);
-	}
-	void setUInt(const std::string& name, int value)
-	{
-		glUniform1ui(glGetUniformLocation(programID, name.c_str()), value);
 	}
 	void setFloat(const std::string& name, float value)
 	{
@@ -95,24 +91,27 @@ const std::string vertexShaderSource = R"(
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aColor;
 
+uniform float aSize;
+
 out vec3 ourColor;
 
 void main()
 {
-	gl_Position = vec4(aPos, 1.0);
+	gl_Position = vec4(aPos*aSize, 1.0);
 	ourColor = aColor;
 }
 )";
 
+//只有一个分量就不是vec2了，直接写float
 const std::string fragmentShaderSource = R"(
 #version 330 core
 in vec3 ourColor;
 
-out vec4 FragColor;
+out vec4 outColor;
 
 void main()
 {
-	FragColor = vec4(ourColor, 1.0);
+	outColor = vec4(ourColor, 1.0);
 }
 )";
 
@@ -173,12 +172,11 @@ int main()
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	//glEnableVertexAttribArray(0);
 
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	//glEnableVertexAttribArray(1);
-	//前后都可以
+	//glEnableVertexAttribArray(1); //卸载glVertexAttribPointer前后都可以
+	
 
 	glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 	//渲染循环
@@ -191,7 +189,9 @@ int main()
 
 		a_shader.useProgram();
 		glBindVertexArray(VAO);
-
+		float timeValue = (float)glfwGetTime();
+		float sizeValue = sin(timeValue) / 2.0f + 0.5f;
+		a_shader.setFloat("aSize", sizeValue);
 
 		// render the triangle
 		glDrawArrays(GL_TRIANGLES, 0, 3);
